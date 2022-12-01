@@ -29,7 +29,7 @@ internal final class DropView: UIView {
     self.drop = drop
     super.init(frame: .zero)
 
-    backgroundColor = .secondarySystemBackground
+    backgroundColor = drop.backgroundColor
 
     addSubview(stackView)
 
