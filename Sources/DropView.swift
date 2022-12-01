@@ -215,9 +215,6 @@ final class RoundButton: UIButton {
 }
 
 final class RoundImageView: UIImageView {
-    override var bounds: CGRect {
-        didSet { layer.cornerRadius = frame.cornerRadius }
-    }
 }
 
 extension UIFont {
