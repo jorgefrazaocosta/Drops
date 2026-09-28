@@ -30,7 +30,6 @@ internal final class DropView: UIView {
         super.init(frame: .zero)
 
         setupBackground(for: drop)
-        addSubview(stackView)
 
         let constraints = createLayoutConstraints(for: drop)
         NSLayoutConstraint.activate(constraints)
@@ -58,6 +57,10 @@ internal final class DropView: UIView {
             return glassView != nil
         }
         return false
+    }
+
+    private var contentContainer: UIView {
+        glassView?.contentView ?? self
     }
 
     func createLayoutConstraints(for drop: Drop) -> [NSLayoutConstraint] {
@@ -93,11 +96,13 @@ internal final class DropView: UIView {
             }
         }
 
+        let container = contentContainer
+
         constraints += [
-            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: insets.left),
-            stackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: insets.top),
-            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -insets.right),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -insets.bottom)
+            stackView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: insets.left),
+            stackView.topAnchor.constraint(equalTo: container.topAnchor, constant: insets.top),
+            stackView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -insets.right),
+            stackView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -insets.bottom)
         ]
 
         return constraints
@@ -218,7 +223,9 @@ internal final class DropView: UIView {
 
     private func setupBackground(for drop: Drop) {
         if #available(iOS 26.0, *) {
-            backgroundColor = .clear
+            // Keep a solid fallback so the toast stays visible even if glass
+            // cannot sample content (e.g. empty overlay windows).
+            backgroundColor = drop.backgroundColor
 
             let effect = UIGlassEffect(style: .regular)
             effect.isInteractive = false
@@ -228,8 +235,10 @@ internal final class DropView: UIView {
             glassView.translatesAutoresizingMaskIntoConstraints = false
             glassView.cornerConfiguration = .capsule()
 
-            insertSubview(glassView, at: 0)
+            addSubview(glassView)
             self.glassView = glassView
+
+            glassView.contentView.addSubview(stackView)
 
             NSLayoutConstraint.activate([
                 glassView.topAnchor.constraint(equalTo: topAnchor),
@@ -239,6 +248,7 @@ internal final class DropView: UIView {
             ])
         } else {
             backgroundColor = drop.backgroundColor
+            addSubview(stackView)
         }
     }
 

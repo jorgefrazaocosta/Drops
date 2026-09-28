@@ -69,22 +69,30 @@ internal final class Presenter: NSObject {
   let context: AnimationContext
 
   func install() {
-    guard let container = viewController.value else { return }
-    guard let containerView = container.view else { return }
-
-    container.install()
-
     maskingView.translatesAutoresizingMaskIntoConstraints = false
-    containerView.addSubview(maskingView)
+
+    // Prefer the key window so Liquid Glass can sample app content behind the toast.
+    // Fall back to the dedicated overlay window when no key window is available.
+    let hostView: UIView
+    if let keyWindow = UIApplication.shared.activeWindowScene?.windows.first(where: \.isKeyWindow) {
+      hostView = keyWindow
+      keyWindow.addSubview(maskingView)
+    } else if let container = viewController.value, let containerView = container.view {
+      container.install()
+      hostView = containerView
+      containerView.addSubview(maskingView)
+    } else {
+      return
+    }
 
     NSLayoutConstraint.activate([
-      maskingView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-      maskingView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-      maskingView.topAnchor.constraint(equalTo: containerView.topAnchor),
-      maskingView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+      maskingView.leadingAnchor.constraint(equalTo: hostView.leadingAnchor),
+      maskingView.trailingAnchor.constraint(equalTo: hostView.trailingAnchor),
+      maskingView.topAnchor.constraint(equalTo: hostView.topAnchor),
+      maskingView.bottomAnchor.constraint(equalTo: hostView.bottomAnchor)
     ])
 
-    containerView.layoutIfNeeded()
+    hostView.layoutIfNeeded()
   }
 
   func announcementAccessibilityMessage(for drop: Drop) {
