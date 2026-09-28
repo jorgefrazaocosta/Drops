@@ -30,6 +30,7 @@ internal final class DropView: UIView {
         super.init(frame: .zero)
 
         setupBackground(for: drop)
+        addSubview(stackView)
 
         let constraints = createLayoutConstraints(for: drop)
         NSLayoutConstraint.activate(constraints)
@@ -57,10 +58,6 @@ internal final class DropView: UIView {
             return glassView != nil
         }
         return false
-    }
-
-    private var contentContainer: UIView {
-        glassView?.contentView ?? self
     }
 
     func createLayoutConstraints(for drop: Drop) -> [NSLayoutConstraint] {
@@ -96,13 +93,13 @@ internal final class DropView: UIView {
             }
         }
 
-        let container = contentContainer
-
+        // Pin content to DropView itself so Auto Layout can resolve height.
+        // UIVisualEffectView does not size from its contentView subviews.
         constraints += [
-            stackView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: insets.left),
-            stackView.topAnchor.constraint(equalTo: container.topAnchor, constant: insets.top),
-            stackView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -insets.right),
-            stackView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -insets.bottom)
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: insets.left),
+            stackView.topAnchor.constraint(equalTo: topAnchor, constant: insets.top),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -insets.right),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -insets.bottom)
         ]
 
         return constraints
@@ -223,8 +220,8 @@ internal final class DropView: UIView {
 
     private func setupBackground(for drop: Drop) {
         if #available(iOS 26.0, *) {
-            // Clear so Liquid Glass can sample the key-window content behind the toast.
-            backgroundColor = .clear
+            // Solid fallback keeps the toast visible; glass sits behind the labels.
+            backgroundColor = drop.backgroundColor
 
             let effect = UIGlassEffect(style: .regular)
             effect.isInteractive = false
@@ -232,12 +229,11 @@ internal final class DropView: UIView {
 
             let glassView = UIVisualEffectView(effect: effect)
             glassView.translatesAutoresizingMaskIntoConstraints = false
+            glassView.isUserInteractionEnabled = false
             glassView.cornerConfiguration = .capsule()
 
-            addSubview(glassView)
+            insertSubview(glassView, at: 0)
             self.glassView = glassView
-
-            glassView.contentView.addSubview(stackView)
 
             NSLayoutConstraint.activate([
                 glassView.topAnchor.constraint(equalTo: topAnchor),
@@ -247,16 +243,11 @@ internal final class DropView: UIView {
             ])
         } else {
             backgroundColor = drop.backgroundColor
-            addSubview(stackView)
         }
     }
 
     private func updateCornerRadius() {
-        if usesLiquidGlass {
-            layer.cornerRadius = 0
-        } else {
-            layer.cornerRadius = frame.cornerRadius
-        }
+        layer.cornerRadius = frame.cornerRadius
     }
 }
 
