@@ -223,9 +223,8 @@ internal final class DropView: UIView {
 
     private func setupBackground(for drop: Drop) {
         if #available(iOS 26.0, *) {
-            // Keep a solid fallback so the toast stays visible even if glass
-            // cannot sample content (e.g. empty overlay windows).
-            backgroundColor = drop.backgroundColor
+            // Clear so Liquid Glass can sample the key-window content behind the toast.
+            backgroundColor = .clear
 
             let effect = UIGlassEffect(style: .regular)
             effect.isInteractive = false
