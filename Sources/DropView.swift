@@ -28,61 +28,55 @@ internal final class DropView: UIView {
     required init(drop: Drop) {
         self.drop = drop
         super.init(frame: .zero)
-
-        setupBackground(for: drop)
+        
+        backgroundColor = drop.backgroundColor
+        
         addSubview(stackView)
-
+        
         let constraints = createLayoutConstraints(for: drop)
         NSLayoutConstraint.activate(constraints)
         configureViews(for: drop)
     }
-
+    
     required init?(coder _: NSCoder) {
         return nil
     }
-
+    
     override var frame: CGRect {
-        didSet { updateCornerRadius() }
+        didSet { layer.cornerRadius = frame.cornerRadius }
     }
-
+    
     override var bounds: CGRect {
-        didSet { updateCornerRadius() }
+        didSet { layer.cornerRadius = frame.cornerRadius }
     }
-
+    
     let drop: Drop
-
-    private var glassView: UIVisualEffectView?
-
-    private var usesLiquidGlass: Bool {
-        if #available(iOS 26.0, *) {
-            return glassView != nil
-        }
-        return false
-    }
-
+    
     func createLayoutConstraints(for drop: Drop) -> [NSLayoutConstraint] {
         var constraints: [NSLayoutConstraint] = []
-
+        
         constraints += [
             imageView.heightAnchor.constraint(equalToConstant: 25),
             imageView.widthAnchor.constraint(equalToConstant: 25)
         ]
-
+        
         constraints += [
             button.heightAnchor.constraint(equalToConstant: 35),
             button.widthAnchor.constraint(equalToConstant: 35)
         ]
-
-        var insets = UIEdgeInsets(top: 7.5, left: 16, bottom: 7.5, right: 16)
-
-        if drop.icon != nil {
+        
+        var insets = UIEdgeInsets(top: 7.5, left: 12.5, bottom: 7.5, right: 12.5)
+        
+        if drop.icon == nil {
+            insets.left = 40
+        } else {
             insets.left = 20
         }
-
-        if drop.action?.icon != nil {
-            insets.right = 12
+        
+        if drop.action?.icon == nil {
+            insets.right = 40
         }
-
+        
         if drop.subtitle == nil {
             insets.top = 15
             insets.bottom = 15
@@ -92,65 +86,62 @@ internal final class DropView: UIView {
                 insets.right = 10
             }
         }
-
-        // Pin content to DropView itself so Auto Layout can resolve height.
-        // UIVisualEffectView does not size from its contentView subviews.
+        
+        if drop.icon == nil, drop.action?.icon == nil {
+            insets.left = 50
+            insets.right = 50
+        }
+        
         constraints += [
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: insets.left),
-            stackView.topAnchor.constraint(equalTo: topAnchor, constant: insets.top),
+            stackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: insets.top),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -insets.right),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -insets.bottom)
         ]
-
+        
         return constraints
     }
-
+    
     func configureViews(for drop: Drop) {
-        clipsToBounds = usesLiquidGlass == false
-
+        clipsToBounds = true
+        
         titleLabel.text = drop.title
         titleLabel.numberOfLines = drop.titleNumberOfLines
         titleLabel.textColor = drop.titleColor
-
+        
         subtitleLabel.text = drop.subtitle
         subtitleLabel.numberOfLines = drop.subtitleNumberOfLines
         subtitleLabel.isHidden = drop.subtitle == nil
         subtitleLabel.textColor = drop.subtitleColor
-
+        
         imageView.image = drop.icon
         imageView.isHidden = drop.icon == nil
         if let tintColor = drop.tintColor {
             imageView.tintColor = tintColor
         }
-
+        
         button.setImage(drop.action?.icon, for: .normal)
         button.isHidden = drop.action?.icon == nil
-
+        
         if let action = drop.action, action.icon == nil {
             let tap = UITapGestureRecognizer(target: self, action: #selector(didTapButton))
             addGestureRecognizer(tap)
         }
-
-        if usesLiquidGlass {
-            layer.shadowOpacity = 0
-            layer.shouldRasterize = false
-            layer.masksToBounds = false
-        } else {
-            layer.shadowColor = UIColor.black.cgColor
-            layer.shadowOffset = .zero
-            layer.shadowRadius = 25
-            layer.shadowOpacity = 0.15
-            layer.shouldRasterize = true
-            layer.rasterizationScale = UIScreen.main.scale
-            layer.masksToBounds = false
-        }
+        
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOffset = .zero
+        layer.shadowRadius = 25
+        layer.shadowOpacity = 0.15
+        layer.shouldRasterize = true
+        layer.rasterizationScale = UIScreen.main.scale
+        layer.masksToBounds = false
     }
-
+    
     @objc
     func didTapButton() {
         drop.action?.handler()
     }
-
+    
     lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -161,7 +152,7 @@ internal final class DropView: UIView {
         label.adjustsFontSizeToFitWidth = true
         return label
     }()
-
+    
     lazy var subtitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -172,7 +163,7 @@ internal final class DropView: UIView {
         label.adjustsFontSizeToFitWidth = true
         return label
     }()
-
+    
     lazy var imageView: UIImageView = {
         let view = RoundImageView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -181,7 +172,7 @@ internal final class DropView: UIView {
         view.tintColor = UIAccessibility.isDarkerSystemColorsEnabled ? .label : .secondaryLabel
         return view
     }()
-
+    
     lazy var button: UIButton = {
         let button = RoundButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -193,7 +184,7 @@ internal final class DropView: UIView {
         button.contentEdgeInsets = .init(top: 7.5, left: 7.5, bottom: 7.5, right: 7.5)
         return button
     }()
-
+    
     lazy var labelsStackView: UIStackView = {
         let view = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -203,7 +194,7 @@ internal final class DropView: UIView {
         view.spacing = -1
         return view
     }()
-
+    
     lazy var stackView: UIStackView = {
         let view = UIStackView(arrangedSubviews: [imageView, labelsStackView, button])
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -217,38 +208,6 @@ internal final class DropView: UIView {
         }
         return view
     }()
-
-    private func setupBackground(for drop: Drop) {
-        if #available(iOS 26.0, *) {
-            // Solid fallback keeps the toast visible; glass sits behind the labels.
-            backgroundColor = drop.backgroundColor
-
-            let effect = UIGlassEffect(style: .regular)
-            effect.isInteractive = false
-            effect.tintColor = drop.backgroundColor
-
-            let glassView = UIVisualEffectView(effect: effect)
-            glassView.translatesAutoresizingMaskIntoConstraints = false
-            glassView.isUserInteractionEnabled = false
-            glassView.cornerConfiguration = .capsule()
-
-            insertSubview(glassView, at: 0)
-            self.glassView = glassView
-
-            NSLayoutConstraint.activate([
-                glassView.topAnchor.constraint(equalTo: topAnchor),
-                glassView.bottomAnchor.constraint(equalTo: bottomAnchor),
-                glassView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                glassView.trailingAnchor.constraint(equalTo: trailingAnchor)
-            ])
-        } else {
-            backgroundColor = drop.backgroundColor
-        }
-    }
-
-    private func updateCornerRadius() {
-        layer.cornerRadius = frame.cornerRadius
-    }
 }
 
 final class RoundButton: UIButton {
