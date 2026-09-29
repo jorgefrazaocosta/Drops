@@ -219,31 +219,30 @@ internal final class DropView: UIView {
     }()
 
     private func setupBackground(for drop: Drop) {
-        // Always keep the solid color so the toast stays visible in the overlay window.
-        backgroundColor = drop.backgroundColor
+        if #available(iOS 26.0, *) {
+            backgroundColor = .clear
 
-        guard #available(iOS 26.0, *) else {
-            return
+            let effect = UIGlassEffect(style: .regular)
+            effect.isInteractive = false
+            effect.tintColor = drop.backgroundColor
+
+            let glassView = UIVisualEffectView(effect: effect)
+            glassView.translatesAutoresizingMaskIntoConstraints = false
+            glassView.isUserInteractionEnabled = false
+            glassView.cornerConfiguration = .capsule()
+
+            insertSubview(glassView, at: 0)
+            self.glassView = glassView
+
+            NSLayoutConstraint.activate([
+                glassView.topAnchor.constraint(equalTo: topAnchor),
+                glassView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                glassView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                glassView.trailingAnchor.constraint(equalTo: trailingAnchor)
+            ])
+        } else {
+            backgroundColor = drop.backgroundColor
         }
-
-        let effect = UIGlassEffect(style: .regular)
-        effect.isInteractive = false
-        effect.tintColor = drop.backgroundColor
-
-        let glassView = UIVisualEffectView(effect: effect)
-        glassView.translatesAutoresizingMaskIntoConstraints = false
-        glassView.isUserInteractionEnabled = false
-        glassView.cornerConfiguration = .capsule()
-
-        insertSubview(glassView, at: 0)
-        self.glassView = glassView
-
-        NSLayoutConstraint.activate([
-            glassView.topAnchor.constraint(equalTo: topAnchor),
-            glassView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            glassView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            glassView.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
     }
 }
 
