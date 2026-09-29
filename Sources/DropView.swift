@@ -224,7 +224,6 @@ internal final class DropView: UIView {
 
             let effect = UIGlassEffect(style: .regular)
             effect.isInteractive = false
-            effect.tintColor = drop.backgroundColor
 
             let glassView = UIVisualEffectView(effect: effect)
             glassView.translatesAutoresizingMaskIntoConstraints = false
